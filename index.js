@@ -3,17 +3,49 @@ const http = require("http");
 
 const PORT = process.env.PORT || 3000;
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, {
-    "Content-Type": "text/plain; charset=utf-8"
-  });
+const server = http.createServer(async (req, res) => {
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
 
   if (req.url === "/") {
-    res.end("MAX Smart Home Bot: online");
+    res.writeHead(200);
+    res.end(JSON.stringify({ status: "online" }));
     return;
   }
 
-  res.end("MAX Bot server is running");
+  if (req.url === "/check-me") {
+    const token = process.env.MAX_BOT_TOKEN;
+
+    if (!token) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: "MAX_BOT_TOKEN is missing" }));
+      return;
+    }
+
+    try {
+      const response = await fetch("https://platform-api2.max.ru/me", {
+        method: "GET",
+        headers: {
+          Authorization: token
+        }
+      });
+
+      const body = await response.text();
+
+      res.writeHead(response.status);
+      res.end(body);
+    } catch (error) {
+      res.writeHead(502);
+      res.end(JSON.stringify({
+        error: "MAX API connection failed",
+        details: error.message
+      }));
+    }
+
+    return;
+  }
+
+  res.writeHead(404);
+  res.end(JSON.stringify({ error: "Not found" }));
 });
 
 server.listen(PORT, "0.0.0.0", () => {
