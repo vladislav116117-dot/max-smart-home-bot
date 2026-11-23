@@ -108,7 +108,7 @@ const server = http.createServer(async (req, res) => {
           },
           body: JSON.stringify({
             url: "https://max-smart-home-bot.vladislav116117.workers.dev/webhook",
-            update_types: ["message_created", "bot_started"],
+            update_types: ["message_created", "bot_started", "message_callback"],
             secret: process.env.MAX_WEBHOOK_SECRET
           })
         }
