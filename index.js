@@ -189,14 +189,27 @@ const server = http.createServer(async (req, res) => {
       }
 
       // Обычное сообщение пользователя
-      else if (update.update_type === "message_created") {
-        const sender = update.message?.sender;
+else if (update.update_type === "message_created") {
+  const sender = update.message?.sender;
+  const text = update.message?.body?.text?.trim() || "";
 
-        if (sender?.user_id && sender.is_bot !== true) {
-          await sendMainMenu(sender.user_id);
-          console.log("MAX main menu sent");
+  if (sender?.user_id && sender.is_bot !== true) {
+    if (/^привет\b/i.test(text)) {
+      await sendMainMenu(sender.user_id);
+      console.log("MAX welcome menu sent");
+    } else {
+      await maxRequest(
+        `/messages?user_id=${encodeURIComponent(sender.user_id)}`,
+        "POST",
+        {
+          text: "Пока я понимаю только команды из меню 😊\n\nВыберите нужный раздел с помощью кнопок ниже 👇",
+          attachments: [mainKeyboard]
         }
-      }
+      );
+      console.log("MAX unsupported message response sent");
+    }
+  }
+}
 
       // Запуск бота
       else if (update.update_type === "bot_started") {
