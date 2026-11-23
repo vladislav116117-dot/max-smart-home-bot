@@ -95,6 +95,37 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Однократная регистрация Webhook MAX
+  if (req.method === "GET" && path === "/register-webhook") {
+    try {
+      const response = await fetch(
+        "https://platform-api2.max.ru/subscriptions",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": process.env.MAX_BOT_TOKEN,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            url: "https://max-smart-home-bot.vladislav116117.workers.dev/webhook",
+            update_types: ["message_created", "bot_started"],
+            secret: process.env.MAX_WEBHOOK_SECRET
+          })
+        }
+      );
+
+      const result = await response.text();
+
+      res.writeHead(response.status);
+      res.end(result);
+    } catch (error) {
+      res.writeHead(502);
+      res.end(JSON.stringify({ error: error.message }));
+    }
+
+    return;
+  }
+
   // Проверка подписок MAX
   if (req.method === "GET" && path === "/check-subscriptions") {
     const token = process.env.MAX_BOT_TOKEN;
