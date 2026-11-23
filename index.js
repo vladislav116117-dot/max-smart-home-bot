@@ -8,7 +8,7 @@ const server = http.createServer(async (req, res) => {
 
   const path = req.url.split("?")[0];
 
-  // Проверка очереди и получение входящего события
+  // Приём и обработка входящего события
   if (req.method === "POST" && path === "/process-update") {
     const secret = req.headers["x-queue-forward-secret"];
 
@@ -48,18 +48,48 @@ const server = http.createServer(async (req, res) => {
         timestamp: update.timestamp || null
       });
 
+      // Отвечаем на обычное сообщение пользователя
+      if (
+        update.update_type === "message_created" &&
+        update.message?.sender?.user_id &&
+        update.message.sender.is_bot !== true
+      ) {
+        const userId = update.message.sender.user_id;
+
+        const maxResponse = await fetch(
+          `https://platform-api2.max.ru/messages?user_id=${userId}`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": process.env.MAX_BOT_TOKEN,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              text: "Привет! 👋 Я бот канала «Умный быт 5.0».\n\nПомогу разобраться с умными устройствами и технологиями для дома. Скоро здесь появится меню с полезными разделами!"
+            })
+          }
+        );
+
+        const result = await maxResponse.text();
+
+        if (!maxResponse.ok) {
+          console.error("MAX send error:", maxResponse.status, result);
+          res.writeHead(502);
+          res.end(JSON.stringify({ error: "MAX message send failed" }));
+          return;
+        }
+
+        console.log("MAX reply sent to user:", userId);
+      }
+
       res.writeHead(200);
-      res.end(JSON.stringify({
-        success: true,
-        received: true,
-        update_type: update.update_type || "unknown"
-      }));
+      res.end(JSON.stringify({ success: true }));
 
     } catch (error) {
       console.error("Update processing error:", error.message);
 
       res.writeHead(400);
-      res.end(JSON.stringify({ error: "Invalid JSON" }));
+      res.end(JSON.stringify({ error: error.message }));
     }
 
     return;
@@ -90,10 +120,7 @@ const server = http.createServer(async (req, res) => {
       res.end(body);
     } catch (error) {
       res.writeHead(502);
-      res.end(JSON.stringify({
-        error: "MAX subscriptions check failed",
-        details: error.message
-      }));
+      res.end(JSON.stringify({ error: error.message }));
     }
 
     return;
@@ -131,10 +158,7 @@ const server = http.createServer(async (req, res) => {
       res.end(body);
     } catch (error) {
       res.writeHead(502);
-      res.end(JSON.stringify({
-        error: "MAX API connection failed",
-        details: error.message
-      }));
+      res.end(JSON.stringify({ error: error.message }));
     }
 
     return;
