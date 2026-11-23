@@ -191,10 +191,10 @@ const server = http.createServer(async (req, res) => {
       // Обычное сообщение пользователя
 else if (update.update_type === "message_created") {
   const sender = update.message?.sender;
-const text = update.message?.text?.trim() || "";
+const text = (update.message?.body?.text || "").trim().toLowerCase();
 
   if (sender?.user_id && sender.is_bot !== true) {
-    if (/^привет\b/i.test(text)) {
+    if (text.startsWith("привет")) {
       await sendMainMenu(sender.user_id);
       console.log("MAX welcome menu sent");
     } else {
