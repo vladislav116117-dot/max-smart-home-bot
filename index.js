@@ -191,7 +191,8 @@ const server = http.createServer(async (req, res) => {
       // Обычное сообщение пользователя
 else if (update.update_type === "message_created") {
   const sender = update.message?.sender;
-  const text = update.message?.body?.text?.trim() || "";
+  console.log("Incoming message body:", JSON.stringify(update.message?.body));
+const text = update.message?.body?.text?.trim() || "";
 
   if (sender?.user_id && sender.is_bot !== true) {
     if (/^привет\b/i.test(text)) {
